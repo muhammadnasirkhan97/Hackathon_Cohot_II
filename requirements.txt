@@ -3,4 +3,4 @@ transformers
 torch
 SpeechRecognition
 gTTS
-PyAudio
+
