@@ -1,21 +1,34 @@
-# => 01 real time voice 
+# => 02 updated code 
 import streamlit as st
 from transformers import pipeline
 import speech_recognition as sr
 from gtts import gTTS
 from io import BytesIO
+import re
 import torch
 
-# Check if GPU is available
+# Set device for optimal performance
 device = 0 if torch.cuda.is_available() else -1
 
-# Load the Hugging Face model on the correct device
-qa_pipeline = pipeline("text-generation", model="gpt2", device=device)
+# Load the question-answering pipeline
+qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2", device=device)
 
 st.title("Interview Preparation Chatbot")
-st.write("Speak your interview questions directly into the microphone.")
+st.write("Ask interview questions about programming concepts through text or voice.")
 
-# Function to capture real-time audio from the microphone
+# Context for the question-answering model
+context = """
+Python lists are collections of data stored in a single variable. They are ordered, mutable, and allow duplicate values. 
+Lists are created with square brackets []. Here are some list operations: append(), remove(), len(), and slicing.
+"""
+
+# Function to clean input text for better model responses
+def clean_input(input_text):
+    # Remove extra characters like punctuation
+    input_text = re.sub(r'[^a-zA-Z0-9\s]', '', input_text)
+    return input_text
+
+# Function to capture voice input
 def get_voice_input():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
@@ -31,26 +44,89 @@ def get_voice_input():
             st.write("Voice recognition service is unavailable.")
     return None
 
-# Text-to-speech function to convert answer to speech
+# Function to convert text to speech
 def text_to_speech(text):
     tts = gTTS(text)
     audio_output = BytesIO()
     tts.write_to_fp(audio_output)
     st.audio(audio_output, format="audio/mp3")
 
-# Real-time voice input button
+# User input options for text or voice
+st.write("Choose to either type or speak your question.")
+user_question = st.text_input("Type your question here:")
+
 if st.button("Record Question"):
-    question = get_voice_input()
+    user_question = get_voice_input()
 
-    if question:
-        # Generate response based on the question
-        response = qa_pipeline(question, max_length=50, do_sample=True, truncation=True)
-        answer_text = response[0]['generated_text']
-        st.write(f"**Answer:** {answer_text}")
+# Check if question exists and process it
+if user_question:
+    # Clean and prepare the question
+    cleaned_question = clean_input(user_question)
+    st.write(f"**Cleaned Question:** {cleaned_question}")
 
-        # Play the answer as audio
-        if st.button("Play Answer"):
-            text_to_speech(answer_text)
+    # Generate response based on the question
+    response = qa_pipeline(question=cleaned_question, context=context)
+    answer_text = response['answer']
+    st.write(f"**Answer:** {answer_text}")
+
+    # Option to play answer in voice
+    if st.button("Play Answer"):
+        text_to_speech(answer_text)
+
+
+# # => 01 real time voice 
+# import streamlit as st
+# from transformers import pipeline
+# import speech_recognition as sr
+# from gtts import gTTS
+# from io import BytesIO
+# import torch
+
+# # Check if GPU is available
+# device = 0 if torch.cuda.is_available() else -1
+
+# # Load the Hugging Face model on the correct device
+# qa_pipeline = pipeline("text-generation", model="gpt2", device=device)
+
+# st.title("Interview Preparation Chatbot")
+# st.write("Speak your interview questions directly into the microphone.")
+
+# # Function to capture real-time audio from the microphone
+# def get_voice_input():
+#     recognizer = sr.Recognizer()
+#     with sr.Microphone() as source:
+#         st.write("Listening...")
+#         audio = recognizer.listen(source)
+#         try:
+#             question = recognizer.recognize_google(audio)
+#             st.write(f"You asked: {question}")
+#             return question
+#         except sr.UnknownValueError:
+#             st.write("Could not understand the audio.")
+#         except sr.RequestError:
+#             st.write("Voice recognition service is unavailable.")
+#     return None
+
+# # Text-to-speech function to convert answer to speech
+# def text_to_speech(text):
+#     tts = gTTS(text)
+#     audio_output = BytesIO()
+#     tts.write_to_fp(audio_output)
+#     st.audio(audio_output, format="audio/mp3")
+
+# # Real-time voice input button
+# if st.button("Record Question"):
+#     question = get_voice_input()
+
+#     if question:
+#         # Generate response based on the question
+#         response = qa_pipeline(question, max_length=50, do_sample=True, truncation=True)
+#         answer_text = response[0]['generated_text']
+#         st.write(f"**Answer:** {answer_text}")
+
+#         # Play the answer as audio
+#         if st.button("Play Answer"):
+#             text_to_speech(answer_text)
 
 
 # # => 00 recorder voice
