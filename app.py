@@ -1,7 +1,6 @@
-# => 02 updated code 
+# => 03 using only text base question
 import streamlit as st
 from transformers import pipeline
-import speech_recognition as sr
 from gtts import gTTS
 from io import BytesIO
 import re
@@ -14,7 +13,7 @@ device = 0 if torch.cuda.is_available() else -1
 qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2", device=device)
 
 st.title("Interview Preparation Chatbot")
-st.write("Ask interview questions about programming concepts through text or voice.")
+st.write("Ask interview questions about programming concepts through text.")
 
 # Context for the question-answering model
 context = """
@@ -28,22 +27,6 @@ def clean_input(input_text):
     input_text = re.sub(r'[^a-zA-Z0-9\s]', '', input_text)
     return input_text
 
-# Function to capture voice input
-def get_voice_input():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Listening...")
-        audio = recognizer.listen(source)
-        try:
-            question = recognizer.recognize_google(audio)
-            st.write(f"You asked: {question}")
-            return question
-        except sr.UnknownValueError:
-            st.write("Could not understand the audio.")
-        except sr.RequestError:
-            st.write("Voice recognition service is unavailable.")
-    return None
-
 # Function to convert text to speech
 def text_to_speech(text):
     tts = gTTS(text)
@@ -51,12 +34,8 @@ def text_to_speech(text):
     tts.write_to_fp(audio_output)
     st.audio(audio_output, format="audio/mp3")
 
-# User input options for text or voice
-st.write("Choose to either type or speak your question.")
+# User input for text
 user_question = st.text_input("Type your question here:")
-
-if st.button("Record Question"):
-    user_question = get_voice_input()
 
 # Check if question exists and process it
 if user_question:
@@ -72,6 +51,82 @@ if user_question:
     # Option to play answer in voice
     if st.button("Play Answer"):
         text_to_speech(answer_text)
+
+
+# # => 02 updated code 
+# import streamlit as st
+# from transformers import pipeline
+# import speech_recognition as sr
+# from gtts import gTTS
+# from io import BytesIO
+# import re
+# import torch
+
+# # Set device for optimal performance
+# device = 0 if torch.cuda.is_available() else -1
+
+# # Load the question-answering pipeline
+# qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2", device=device)
+
+# st.title("Interview Preparation Chatbot")
+# st.write("Ask interview questions about programming concepts through text or voice.")
+
+# # Context for the question-answering model
+# context = """
+# Python lists are collections of data stored in a single variable. They are ordered, mutable, and allow duplicate values. 
+# Lists are created with square brackets []. Here are some list operations: append(), remove(), len(), and slicing.
+# """
+
+# # Function to clean input text for better model responses
+# def clean_input(input_text):
+#     # Remove extra characters like punctuation
+#     input_text = re.sub(r'[^a-zA-Z0-9\s]', '', input_text)
+#     return input_text
+
+# # Function to capture voice input
+# def get_voice_input():
+#     recognizer = sr.Recognizer()
+#     with sr.Microphone() as source:
+#         st.write("Listening...")
+#         audio = recognizer.listen(source)
+#         try:
+#             question = recognizer.recognize_google(audio)
+#             st.write(f"You asked: {question}")
+#             return question
+#         except sr.UnknownValueError:
+#             st.write("Could not understand the audio.")
+#         except sr.RequestError:
+#             st.write("Voice recognition service is unavailable.")
+#     return None
+
+# # Function to convert text to speech
+# def text_to_speech(text):
+#     tts = gTTS(text)
+#     audio_output = BytesIO()
+#     tts.write_to_fp(audio_output)
+#     st.audio(audio_output, format="audio/mp3")
+
+# # User input options for text or voice
+# st.write("Choose to either type or speak your question.")
+# user_question = st.text_input("Type your question here:")
+
+# if st.button("Record Question"):
+#     user_question = get_voice_input()
+
+# # Check if question exists and process it
+# if user_question:
+#     # Clean and prepare the question
+#     cleaned_question = clean_input(user_question)
+#     st.write(f"**Cleaned Question:** {cleaned_question}")
+
+#     # Generate response based on the question
+#     response = qa_pipeline(question=cleaned_question, context=context)
+#     answer_text = response['answer']
+#     st.write(f"**Answer:** {answer_text}")
+
+#     # Option to play answer in voice
+#     if st.button("Play Answer"):
+#         text_to_speech(answer_text)
 
 
 # # => 01 real time voice 
